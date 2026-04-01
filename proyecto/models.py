@@ -1,5 +1,5 @@
 from datetime import datetime
-from docs.extensions import db
+from proyecto.extensions import db
 
 class Repuesto(db.Model):
     __tablename__ = 'repuesto'

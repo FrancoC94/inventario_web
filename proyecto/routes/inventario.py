@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from sqlalchemy import func
 from datetime import datetime
-from docs.extensions import db
-from docs.models import Repuesto, Venta, HistorialStock
+from proyecto.extensions import db
+from proyecto.models import Repuesto, Venta, HistorialStock
 
 inventario_bp = Blueprint('inventario', __name__)
 
