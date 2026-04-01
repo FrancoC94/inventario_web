@@ -1,6 +1,6 @@
 from flask import Blueprint, redirect, url_for, flash, request
-from extensions import db
-from models import Repuesto, Venta, HistorialStock
+from docs.extensions import db
+from docs.models import Repuesto, Venta, HistorialStock
 
 ventas_bp = Blueprint('ventas', __name__)
 

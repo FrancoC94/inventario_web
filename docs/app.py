@@ -18,9 +18,9 @@ def create_app():
     migrate = Migrate(app, db)  # Integración de Flask-Migrate
 
     # ── Blueprints ─────────────────────────────────────────────────────────
-    from routes.inventario import inventario_bp
-    from routes.ventas import ventas_bp
-    from routes.chat import chat_bp
+    from docs.routes.inventario import inventario_bp
+    from docs.routes.ventas import ventas_bp
+    from docs.routes.chat import chat_bp
 
     app.register_blueprint(inventario_bp)
     app.register_blueprint(ventas_bp)

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy import func
-from models import Repuesto
+from docs.models import Repuesto
 
 chat_bp = Blueprint('chat', __name__)
 
