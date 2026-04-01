@@ -1,0 +1,40 @@
+# ── Python ────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# ── Entorno virtual ───────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Bases de datos locales ───────────────
+driveflow.db
+driveflow_backup.db
+
+# ── Archivos de sistema ───────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Configuración sensible ────────────────
+*.env
+.env
+*.secret
+secret_key.txt
+
+# ── Logs ─────────────────────────────────
+*.log
+
+# ── IDEs / editores ──────────────────────
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ── Archivos temporales / uploads ────────
+uploads/
+*.tmp
