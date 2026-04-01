@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRIVEFLOW PRO | Inteligencia de Negocio</title>
+    <style>
+        :root {
+            --bg: #f8fafc; --panel: #ffffff; --text: #1e293b;
+            --border: #e2e8f0; --primary: #38bdf8; --success: #10b981;
+            --danger: #ef4444; --warning: #f59e0b;
+        }
+        [data-theme="dark"] {
+            --bg: #0f172a; --panel: #1e293b; --text: #f8fafc; --border: #334155;
+        }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; transition: 0.3s; }
+        .container { max-width: 1200px; margin: auto; }
+        .theme-btn { position: fixed; top: 20px; left: 20px; background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; z-index: 100; font-weight: bold; }
+
+        /* Dashboard Pro */
+        .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--panel); padding: 20px; border-radius: 15px; border-top: 5px solid var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+
+        .card { background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .flash { padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold; }
+        .flash.success { background: var(--success); color: white; }
+        .flash.danger { background: var(--danger); color: white; }
+        .flash.info { background: var(--primary); color: white; }
+
+        table { width: 100%; border-collapse: collapse; background: var(--panel); border-radius: 12px; overflow: hidden; }
+        th { background: #334155; color: white; padding: 15px; font-size: 0.8em; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid var(--border); text-align: center; }
+
+        input { background: var(--panel); color: var(--text); border: 1px solid var(--border); padding: 10px; border-radius: 6px; outline: none; }
+        .btn { padding: 8px 15px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; text-decoration: none; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+        /* Modal Editar */
+        .modal { display:none; position:fixed; z-index:200; left:0; top:0; width:100%; height:100%; background: rgba(0,0,0,0.8); align-items:center; justify-content:center; }
+        .modal-content { background: var(--panel); padding:30px; border-radius:15px; width:400px; }
+
+        /* Chat */
+        #chat-btn { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; border-radius: 50%; width: 60px; height: 60px; border: none; cursor: pointer; font-size: 1.5em; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        #chat-ui { position: fixed; bottom: 90px; right: 20px; width: 300px; background: var(--panel); border: 2px solid var(--primary); border-radius: 15px; display: none; flex-direction: column; overflow: hidden; }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <button class="theme-btn" onclick="toggleTheme()">🌓 MODO</button>
+
+    <div class="container">
+        <header style="text-align:center; margin-bottom:40px;">
+            <h1 style="font-size:3em; margin:0;">DRIVE<span>FLOW</span> PRO</h1>
+            <p style="opacity:0.6;">Panel de Control e Inteligencia de Inventario</p>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}{% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}{% endif %}
+        {% endwith %}
+
+        <div class="grid-stats">
+            <div class="stat-card" style="border-color: var(--primary);">
+                <small>💰 CAPITAL + GANANCIA</small><br>
+                <span style="font-size:1.8em; font-weight:bold;">${{ "{:,.2f}".format(inversion + ganancia) }}</span>
+            </div>
+            <div class="stat-card" style="border-color: var(--success);">
+                <small>🚀 VENTAS DE HOY</small><br>
+                <span style="font-size:1.8em; font-weight:bold; color:var(--success);">${{ "{:,.2f}".format(total_hoy) }}</span>
+            </div>
+            <div class="stat-card" style="border-color: var(--warning);">
+                <small>🏆 PRODUCTO ESTRELLA</small><br>
+                <span style="font-size:1.2em; font-weight:bold;">{{ estrella }}</span>
+            </div>
+            <div class="stat-card" style="border-color: var(--danger);">
+                <small>🛒 PEDIDO SUGERIDO</small><br>
+                <span style="font-size:1.8em; font-weight:bold; color:var(--danger);">${{ "{:,.2f}".format(inversion_sugerida) }}</span>
+                <button onclick="copiarLista()" class="btn btn-primary" style="font-size:0.6em; padding:3px 8px; display:block; margin-top:5px;">📋 COPIAR PEDIDO</button>
+            </div>
+        </div>
+
+        <div class="card" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <form action="/" method="GET" style="flex:1;">
+                <input type="text" name="buscar" placeholder="🔍 Buscar repuesto..." style="width:100%;" value="{{ request.args.get('buscar', '') }}">
+            </form>
+            <form action="/subir_masivo" method="POST" enctype="multipart/form-data">
+                <label class="btn btn-outline" style="cursor:pointer;">📁 CARGAR EXCEL <input type="file" name="archivo_excel" onchange="this.form.submit()" style="display:none;"></label>
+            </form>
+        </div>
+
+        <form action="/agregar" method="POST" class="card" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px;">
+            <input type="text" name="nombre" placeholder="Nombre Repuesto" required>
+            <input type="number" step="0.01" name="p_costo" placeholder="Costo $" required>
+            <input type="number" step="0.01" name="p_venta" placeholder="Venta $" required>
+            <input type="number" name="stock" placeholder="Cantidad" required>
+            <button type="submit" class="btn btn-primary">➕ REGISTRAR</button>
+        </form>
+
+        <div class="card" style="padding:0; overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr><th>Producto</th><th>Costo</th><th>Venta</th><th>Stock</th><th>Acción</th></tr>
+                </thead>
+                <tbody>
+                    {% for p in inventario %}
+                    <tr>
+                        <td style="text-align:left; padding-left:20px;"><b>{{ p.nombre }}</b></td>
+                        <td>${{ p.p_costo }}</td>
+                        <td style="color:var(--primary); font-weight:bold;">${{ p.p_venta }}</td>
+                        <td><span style="color: {{ 'var(--danger)' if p.stock < 5 else 'inherit' }}; font-weight:bold;">{{ p.stock }} uds</span></td>
+                        <td>
+                            <div style="display:flex; gap:5px; justify-content:center;">
+                                <form action="/vender/{{ p.id }}" method="POST" style="display:flex;">
+                                    <input type="number" name="cantidad_venta" value="1" min="1" max="{{ p.stock }}" style="width:40px; padding:2px;">
+                                    <button type="submit" class="btn btn-success" style="padding:2px 8px;">VENDER</button>
+                                </form>
+                                <button class="btn btn-outline" onclick="abrirEditor('{{p.id}}','{{p.nombre}}','{{p.p_costo}}','{{p.p_venta}}','{{p.stock}}')">✏️</button>
+                                <a href="/eliminar_producto/{{ p.id }}" class="btn btn-outline" style="color:var(--danger);" onclick="return confirm('¿Eliminar?')">🗑️</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h3 style="margin-top:40px;">📝 Últimos Movimientos</h3>
+        <div class="card" style="padding:0; overflow-x:auto;">
+            <table>
+                <thead style="background:rgba(0,0,0,0.1);">
+                    <tr><th>Hora</th><th>Repuesto</th><th>Cant.</th><th>Total</th><th>Acción</th></tr>
+                </thead>
+                <tbody>
+                    {% for v in ventas %}
+                    <tr>
+                        <td>{{ v.fecha.strftime('%H:%M') }}</td>
+                        <td>{{ v.repuesto.nombre }}</td>
+                        <td>{{ v.cantidad }}</td>
+                        <td style="color:var(--success); font-weight:bold;">+${{ v.total_venta }}</td>
+                        <td><a href="/eliminar_venta/{{ v.id }}" style="color:var(--danger); text-decoration:none; font-size:0.8em;" onclick="return confirm('¿Anular?')">❌ Anular</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modalEditar" class="modal">
+        <div class="modal-content">
+            <h3>Editar Repuesto</h3>
+            <form id="formEditar" method="POST">
+                <input type="text" name="nombre" id="edit_nombre" style="width:100%; margin-bottom:10px;" required>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <input type="number" step="0.01" name="p_costo" id="edit_costo" required>
+                    <input type="number" step="0.01" name="p_venta" id="edit_venta" required>
+                </div>
+                <input type="number" name="stock" id="edit_stock" style="width:100%; margin-bottom:20px;" required>
+                <div style="display:flex; gap:10px;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">GUARDAR</button>
+                    <button type="button" class="btn btn-outline" onclick="cerrarModal()" style="flex:1;">CANCELAR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <button id="chat-btn" onclick="toggleChat()">🤖</button>
+    <div id="chat-ui">
+        <div style="background:var(--primary); color:white; padding:10px; font-weight:bold;">MOTO-BOT</div>
+        <div id="chat-log" style="height:200px; padding:10px; overflow-y:auto; font-size:0.9em; background:var(--panel);"></div>
+        <div style="padding:10px; border-top:1px solid var(--border);">
+            <input type="text" id="chat-in" placeholder="¿Qué buscas?" onkeypress="if(event.key=='Enter') sendChat()" style="width:100%;">
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const b = document.body;
+            const t = b.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            b.setAttribute('data-theme', t);
+            localStorage.setItem('theme', t);
+        }
+        document.body.setAttribute('data-theme', localStorage.getItem('theme') || 'dark');
+
+        function toggleChat() {
+            const ui = document.getElementById('chat-ui');
+            ui.style.display = (ui.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chat-in');
+            const log = document.getElementById('chat-log');
+            if(!input.value) return;
+            log.innerHTML += `<div><b>Tú:</b> ${input.value}</div>`;
+            fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({msg: input.value})
+            }).then(res => res.json()).then(data => {
+                log.innerHTML += `<div style="color:var(--primary)"><b>Bot:</b> ${data.res}</div>`;
+                input.value = "";
+                log.scrollTop = log.scrollHeight;
+            });
+        }
+
+        function abrirEditor(id, nom, costo, venta, stock) {
+            document.getElementById('formEditar').action = "/editar/" + id;
+            document.getElementById('edit_nombre').value = nom;
+            document.getElementById('edit_costo').value = costo;
+            document.getElementById('edit_venta').value = venta;
+            document.getElementById('edit_stock').value = stock;
+            document.getElementById('modalEditar').style.display = 'flex';
+        }
+
+        function cerrarModal() { document.getElementById('modalEditar').style.display = 'none'; }
+
+        function copiarLista() {
+            fetch('/exportar_compras')
+            .then(res => res.text())
+            .then(text => {
+                navigator.clipboard.writeText(text);
+                alert("📋 Lista copiada. ¡Pégala en tu WhatsApp!");
+            });
+        }
+    </script>
+</body>
+</html>
